@@ -1,0 +1,86 @@
+pipeline {
+  agent any
+
+  environment {
+    REMOTE_SERVER = "3.108.157.119"
+    REMOTE_USER   = "ec2-user"
+    REMOTE_SERVER_DEV = "13.234.146.152"
+    REMOTE_SERVER_DEV_WORKER = "13.234.173.66"
+  }
+
+  stages {
+    stage('Cleanup Docker at pipeline server') {
+      steps {
+        withCredentials([sshUserPrivateKey(
+          credentialsId: 'pipeline-ssh-cred',
+          keyFileVariable: 'SSH_KEY'
+        )]) {
+
+          sh '''
+          ssh -i $SSH_KEY -o StrictHostKeyChecking=no $REMOTE_USER@$REMOTE_SERVER "
+            echo '==== BEFORE CLEANUP ====';
+            docker system df;
+            echo 'Removing unused images...';
+            docker image prune -a -f;
+            docker container prune -f;
+            echo '==== AFTER CLEANUP ====';
+            docker system df;
+          "
+          '''
+        }
+      }
+    }
+  
+  stage('Cleanup Docker  at Dev-master') {
+      steps {
+        withCredentials([sshUserPrivateKey(
+          credentialsId: 'ssh-cred',
+          keyFileVariable: 'SSH_KEY'
+        )]) {
+
+          sh '''
+          ssh -i $SSH_KEY -o StrictHostKeyChecking=no $REMOTE_USER@$REMOTE_SERVER_DEV "
+            echo '==== BEFORE CLEANUP ====';
+            docker system df;
+            echo 'Removing unused images...';
+            docker image prune -a -f;
+            docker container prune -f;
+            echo '==== AFTER CLEANUP ====';
+            docker system df;
+          "
+          '''
+        }
+      }
+    }
+    stage('Cleanup Docker at Dev-    WORKER') {
+      steps {
+        withCredentials([sshUserPrivateKey(
+          credentialsId: 'ssh-cred',
+          keyFileVariable: 'SSH_KEY'
+        )]) {
+
+          sh '''
+          ssh -i $SSH_KEY -o StrictHostKeyChecking=no $REMOTE_USER@$REMOTE_SERVER_DEV_WORKER "
+            echo '==== BEFORE CLEANUP ====';
+            docker system df;
+            echo 'Removing unused images...';
+            docker image prune -a -f;
+            docker container prune -f;
+            echo '==== AFTER CLEANUP ====';
+            docker system df;
+          "
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "Cleanup completed on all servers"
+    }
+    failure {
+      echo "Cleanup failed on one or more servers"
+    }
+  }
+}
