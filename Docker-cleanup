@@ -23,7 +23,7 @@ pipeline {
             echo 'Removing unused images...';
             docker image prune -a -f;
             docker container prune -f;
-            echo '==== AFTER CLEANUP ====';
+            echo '==== AFTER the CLEANUP ====';
             docker system df;
           "
           '''
