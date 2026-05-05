@@ -1,5 +1,4 @@
-
-     name: Basic Workflow
+name: Basic Workflow
 
 on: 
   push:        # Trigger when code is pushed
